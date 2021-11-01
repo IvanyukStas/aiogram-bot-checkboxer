@@ -17,7 +17,6 @@ async def on_startup(dispatcher):
     await on_startup_notify(dispatcher)
     a = Aiosqlite_worker()
     await a.create_database()
-    logging.INFO('Подключится к базе')
 
 
 if __name__ == '__main__':
