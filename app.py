@@ -20,8 +20,15 @@ async def on_startup(dispatcher):
     await a.add_new_user('dsfdsfdsf', '342423423423423')
     await a.add_new_checkboxer('xtr,jrcth', 'public', 1)
     await a.add_new_checkbox('dsfdsfdsfds', 'dsfdsfdsfdsfdsf', 1)
-    a = await a.get_user('342423423423423')
-    print(a)
+    c = await a.get_user('342423423423423')
+    b = await a.get_checkboxers('1', '342423423423423')
+    print(b)
+    v = await a.get_checkboxes('1', '1', '342423423423423')
+    print(v, '--'*5)
+    if c == None:
+        print('11111111111111111111111111111111111')
+    else:
+        print('dsfsdfsfs')
 
 
 if __name__ == '__main__':
