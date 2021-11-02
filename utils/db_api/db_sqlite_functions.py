@@ -4,8 +4,11 @@ import aiosqlite, logging
 
 class Aiosqlite_worker:
 
+    def __init__(self, db_name='aiodb1.db') -> None:
+        self.db_name: str = db_name
+
     async def create_database(self):
-        async with aiosqlite.connect('aiodb.db') as db:
+        async with aiosqlite.connect(self.db_name) as db:
             await db.execute("""CREATE TABLE IF NOT EXISTS users(
                            id INTEGER PRIMARY KEY AUTOINCREMENT,
                            uname TEXT,

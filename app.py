@@ -1,4 +1,5 @@
 import logging
+import os.path
 
 from aiogram import executor
 
@@ -15,20 +16,10 @@ async def on_startup(dispatcher):
 
     # Уведомляет про запуск
     await on_startup_notify(dispatcher)
-    a = Aiosqlite_worker()
-    await a.create_database()
-    await a.add_new_user('dsfdsfdsf', '342423423423423')
-    await a.add_new_checkboxer('xtr,jrcth', 'public', 1)
-    await a.add_new_checkbox('dsfdsfdsfds', 'dsfdsfdsfdsfdsf', 1)
-    c = await a.get_user('342423423423423')
-    b = await a.get_checkboxers('1', '342423423423423')
-    print(b)
-    v = await a.get_checkboxes('1', '1', '342423423423423')
-    print(v, '--'*5)
-    if c == None:
-        print('11111111111111111111111111111111111')
-    else:
-        print('dsfsdfsfs')
+    db_worker = Aiosqlite_worker()
+    if not os.path.exists(db_worker.db_name):
+        await db_worker.create_database()
+
 
 
 if __name__ == '__main__':
