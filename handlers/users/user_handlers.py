@@ -1,20 +1,56 @@
+from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Text
 from aiogram.types import Message, CallbackQuery
 
+from keyboards.inline import checkboxers_kb
+from keyboards.inline.checkbox_kb import checkbox_kb, show_checkboxes_kb
+from keyboards.inline.checkboxers_kb import checkboxer_kb
 from keyboards.inline.start import startup_kb
-from states.create_state import CreateState
+from states.checboxer_state import CreateState
 
 from loader import dp, db_worker
 from utils.db_api.db_sqlite_functions import Aiosqlite_worker
 
 
-@dp.callback_query_handlers(Text(startswith='create_checkboxer'))
+
+@dp.callback_query_handler(text='create_checkboxer')
 async def start_create_checkboxer(call: CallbackQuery):
-    await call.answer(f'Напишите название чекбоксера!')
+    await call.message.answer(f'Напишите название чекбоксера!')
     await CreateState.create_checkboxer.set()
 
+
+@dp.callback_query_handler(Text(startswith='my_checkboxers'))
+async def get_checkboxers(call: CallbackQuery):
+    checkboxers = await db_worker.get_checkboxers(call.from_user.id)
+    await call.message.answer(f'Ваши чекбоксеры!', reply_markup=checkboxer_kb(checkboxers))
+
+
+@dp.callback_query_handler(Text(startswith='checkboxer_id'))
+async def get_checkboxes(call: CallbackQuery, state: FSMContext):
+    data = call.data.split('_')
+    checkboxes = await db_worker.get_checkboxes(data[-1])
+    print(checkboxes)
+    if checkboxes == False:
+        await call.message.answer('У вас пока нет чекбоксов. '
+                                  'Напишите в чат название чекбокса и мы его добавим')
+        await CreateState.create_checkbox.set()
+        await state.update_data(checkboxer_id=data[-1])
+    else:
+        await call.message.answer(f'Ваши чекбоксы!', reply_markup=checkbox_kb(checkboxes, data[-1]))
+
+
 @dp.message_handler(state=CreateState.create_checkboxer)
-async def start_create_checkboxer(message: Message):
-    await db_worker.add_new_checkboxer(message.text)
+async def start_create_checkboxer(message: Message, state: FSMContext):
+    await db_worker.add_new_checkboxer(message.text, message.from_user.id, chboxer_status='private')
     await message.answer(f'Создан новый чекбоксер!', reply_markup=startup_kb)
+    await state.finish()
+
+
+@dp.message_handler(state=CreateState.create_checkbox)
+async def add_checkbox(message: Message, state: FSMContext):
+    data = await state.get_data()
+    await db_worker.add_new_checkbox(message.text, data['checkboxer_id'])
+    await message.answer(f'Наберите название нового чекбоксера или нажмите,\n '
+                              f'чтоб получить список чебоксов!',
+                         reply_markup=await show_checkboxes_kb(data['checkboxer_id'], state))
 

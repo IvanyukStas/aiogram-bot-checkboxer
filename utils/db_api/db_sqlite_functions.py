@@ -4,7 +4,7 @@ import aiosqlite, logging
 
 class Aiosqlite_worker:
 
-    def __init__(self, db_name='aiodb1.db') -> None:
+    def __init__(self, db_name='aiodb.db') -> None:
         self.db_name: str = db_name
 
     async def create_database(self):
@@ -37,7 +37,7 @@ class Aiosqlite_worker:
 
     async def add_new_user(self, user_name, tg_id):
             try:
-                async with aiosqlite.connect('aiodb.db') as db:
+                async with aiosqlite.connect(self.db_name) as db:
                     await db.execute('INSERT INTO users(uname, tg_id) VALUES (?,?)', (user_name, tg_id))
                     await db.commit()
                     logging.info('Добавили нового пользователя!')
@@ -46,16 +46,16 @@ class Aiosqlite_worker:
                 return False
 
 
-    async def add_new_checkboxer(self, chboxer_title, chboxer_status, user_id):
-        async with aiosqlite.connect('aiodb.db') as db:
-            await db.execute('INSERT INTO checkboxer(chboxer_title, chboxer_status, user_id) VALUES (?,?,?)',(
-                chboxer_title, chboxer_status, user_id))
+    async def add_new_checkboxer(self, chboxer_title, tg_id, chboxer_status='private'):
+        async with aiosqlite.connect(self.db_name) as db:
+            await db.execute('INSERT INTO checkboxer(chboxer_title, chboxer_status, tg_id) VALUES (?,?,?)',(
+                chboxer_title, chboxer_status, tg_id))
             await db.commit()
             logging.info('Добавили новый чек боксер!')
 
 
-    async def add_new_checkbox(self, chbox_title, chb_status, checkboxer_id):
-        async with aiosqlite.connect('aiodb.db') as db:
+    async def add_new_checkbox(self, chbox_title, checkboxer_id, chb_status=1):
+        async with aiosqlite.connect(self.db_name) as db:
             await db.execute('INSERT INTO checkbox(chbox_title, chb_status,checkboxer_id) VALUES (?,?,?)',(
                 chbox_title, chb_status, checkboxer_id))
             await db.commit()
@@ -63,28 +63,28 @@ class Aiosqlite_worker:
 
 
     async def get_user(self, tg_id):
-        async with aiosqlite.connect('aiodb.db') as db:
+        async with aiosqlite.connect(self.db_name) as db:
             cursor = await db.execute('SELECT id FROM users WHERE tg_id=?', (tg_id,))
             row = await cursor.fetchone()
         logging.info('Достаем пользователя')
         return row
 
 
-    async def get_checkboxers(self, user_id, tg_id):
-        async with aiosqlite.connect('aiodb.db') as db:
-            cursor = await db.execute('SELECT chboxer_title FROM checkboxer, users WHERE user_id=? AND tg_id=?', (
-                user_id, tg_id))
+    async def get_checkboxers(self, tg_id):
+        async with aiosqlite.connect(self.db_name) as db:
+            cursor = await db.execute('SELECT id, chboxer_title FROM checkboxer WHERE tg_id=?', (tg_id,))
             rows = await cursor.fetchall()
         logging.info('Достаем чекбоксеры юзера')
         return rows
 
 
-    async def get_checkboxes(self, checkboxer_id, user_id, tg_id):
-        async with aiosqlite.connect('aiodb.db') as db:
-            cursor = await db.execute('''SELECT chbox_title FROM checkbox, checkboxer, users 
-                                         WHERE checkboxer_id=? 
-                                         AND user_id=?
-                                         AND tg_id=?''', (checkboxer_id, user_id, tg_id))
+    async def get_checkboxes(self, checkboxer_id):
+        async with aiosqlite.connect(self.db_name) as db:
+            cursor = await db.execute('SELECT id, chbox_title, chb_status FROM checkbox '
+                                      'WHERE checkboxer_id=?', (checkboxer_id,))
             rows = await cursor.fetchall()
         logging.info('Достаем чекбоксеры юзера')
-        return rows
+        if len(rows) > 0:
+            return rows
+        else:
+            return False
