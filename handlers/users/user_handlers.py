@@ -29,14 +29,29 @@ async def get_checkboxers(call: CallbackQuery):
 async def get_checkboxes(call: CallbackQuery, state: FSMContext):
     data = call.data.split('_')
     checkboxes = await db_worker.get_checkboxes(data[-1])
-    print(checkboxes)
+    await state.update_data(checkboxer_id=data[-1])
     if checkboxes == False:
         await call.message.answer('У вас пока нет чекбоксов. '
                                   'Напишите в чат название чекбокса и мы его добавим')
         await CreateState.create_checkbox.set()
-        await state.update_data(checkboxer_id=data[-1])
     else:
         await call.message.answer(f'Ваши чекбоксы!', reply_markup=checkbox_kb(checkboxes, data[-1]))
+
+
+@dp.message_handler(state=CreateState.create_checkbox)
+async def add_checkbox(message: Message, state: FSMContext):
+    data = await state.get_data()
+    await db_worker.add_new_checkbox(message.text, data['checkboxer_id'])
+    await message.answer(f'Наберите название нового чекбоксера или нажмите,\n '
+                              f'чтоб получить список чебоксов!',
+                         reply_markup=show_checkboxes_kb(data['checkboxer_id']))
+
+
+@dp.callback_query_handler(Text(startswith='checkboxer_id'), state=CreateState.create_checkbox)
+async def get_checkboxes_in_state(call: CallbackQuery, state: FSMContext):
+    data = call.data.split('_')
+    checkboxes = await db_worker.get_checkboxes(data[-1])
+    await call.message.answer(f'Ваши чекбоксы!', reply_markup=checkbox_kb(checkboxes, data[-1]))
 
 
 @dp.message_handler(state=CreateState.create_checkboxer)
@@ -46,11 +61,5 @@ async def start_create_checkboxer(message: Message, state: FSMContext):
     await state.finish()
 
 
-@dp.message_handler(state=CreateState.create_checkbox)
-async def add_checkbox(message: Message, state: FSMContext):
-    data = await state.get_data()
-    await db_worker.add_new_checkbox(message.text, data['checkboxer_id'])
-    await message.answer(f'Наберите название нового чекбоксера или нажмите,\n '
-                              f'чтоб получить список чебоксов!',
-                         reply_markup=await show_checkboxes_kb(data['checkboxer_id'], state))
+
 

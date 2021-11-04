@@ -12,8 +12,7 @@ def checkbox_kb(checkbox, id):
     return chboxer_kb
 
 
-async def show_checkboxes_kb(id, state):
-    await state.finish()
+def show_checkboxes_kb(id):
     checkbox_button = [types.InlineKeyboardButton('Показать чекбоксы', callback_data=f'checkboxer_id_{id}')]
     checkbox_kb = types.InlineKeyboardMarkup()
     checkbox_kb.add(*checkbox_button)
