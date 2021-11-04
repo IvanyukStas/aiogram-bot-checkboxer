@@ -30,10 +30,10 @@ async def get_checkboxes(call: CallbackQuery, state: FSMContext):
     data = call.data.split('_')
     checkboxes = await db_worker.get_checkboxes(data[-1])
     await state.update_data(checkboxer_id=data[-1])
+    await CreateState.create_checkbox.set()
     if checkboxes == False:
         await call.message.answer('У вас пока нет чекбоксов. '
                                   'Напишите в чат название чекбокса и мы его добавим')
-        await CreateState.create_checkbox.set()
     else:
         await call.message.answer(f'Ваши чекбоксы!', reply_markup=checkbox_kb(checkboxes, data[-1]))
 
@@ -49,9 +49,9 @@ async def add_checkbox(message: Message, state: FSMContext):
 
 @dp.callback_query_handler(Text(startswith='checkboxer_id'), state=CreateState.create_checkbox)
 async def get_checkboxes_in_state(call: CallbackQuery, state: FSMContext):
-    data = call.data.split('_')
-    checkboxes = await db_worker.get_checkboxes(data[-1])
-    await call.message.answer(f'Ваши чекбоксы!', reply_markup=checkbox_kb(checkboxes, data[-1]))
+    data = await state.get_data()
+    checkboxes = await db_worker.get_checkboxes(data['checkboxer_id'])
+    await call.message.answer(f'Ваши чекбоксы!', reply_markup=checkbox_kb(checkboxes, data['checkboxer_id']))
 
 
 @dp.message_handler(state=CreateState.create_checkboxer)

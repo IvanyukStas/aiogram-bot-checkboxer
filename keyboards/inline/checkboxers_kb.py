@@ -1,6 +1,6 @@
 from aiogram import types
 
-from loader import db_worker
+
 
 def checkboxer_kb(checkboxers):
     checkboxer_button = []
