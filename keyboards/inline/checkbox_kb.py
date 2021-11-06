@@ -1,14 +1,23 @@
 from aiogram import types
 
+create_checkbox_kb = types.InlineKeyboardMarkup()
+create_checkbox_kb.add(types.InlineKeyboardButton('Добавить чекбокс!', callback_data='create_checkbox'))
 
 def checkbox_kb(checkbox, id):
     checkbox_button = []
     for i in checkbox:
         chbox_name = i[1]
-        checkbox_button.append(types.InlineKeyboardButton(chbox_name, callback_data='checkbox_id_' + str(i[0])))
-    checkbox_button.append(types.InlineKeyboardButton('Добавить чекбокс', callback_data='checkboxer_id' + str(id)))
+        if i[2] == '0':
+            check_status = '❌'
+        else:
+            check_status = '✅'
+        checkbox_button.append(types.InlineKeyboardButton(check_status+chbox_name, callback_data='update_' + str(i[2])
+                                                                                                 + '_' + str(i[0])))
+    a = types.InlineKeyboardButton('Добавить чекбокс', callback_data='create_checkbox')
+    b = types.InlineKeyboardButton('Начало', callback_data='begin_of_game')
     chboxer_kb = types.InlineKeyboardMarkup(row_width=1)
     chboxer_kb.add(*checkbox_button)
+    chboxer_kb.row(a, b)
     return chboxer_kb
 
 

@@ -15,7 +15,7 @@ class Aiosqlite_worker:
                            tg_id TEXT UNIQUE 
                            );
                         """)
-            await db.execute("""CREATE TABLE IF NOT EXISTS checkboxer(
+            await db.execute("""CREATE TABLE IF NOT EXISTS checkboxers(
                                        id INTEGER PRIMARY KEY AUTOINCREMENT,
                                        chboxer_title TEXT,
                                        chboxer_status TEXT,
@@ -26,9 +26,9 @@ class Aiosqlite_worker:
             await db.execute("""CREATE TABLE IF NOT EXISTS checkbox(
                                                    id INTEGER PRIMARY KEY AUTOINCREMENT,
                                                    chbox_title TEXT,
-                                                   chb_status BOOL,
+                                                   chb_status TEXT,
                                                    checkboxer_id INT,
-                                                   FOREIGN KEY (checkboxer_id) REFERENCES checkboxer(id)
+                                                   FOREIGN KEY (checkboxer_id) REFERENCES checkboxers(id)
                                                    ON DELETE CASCADE);
                                                 """)
             await db.commit()
@@ -48,15 +48,15 @@ class Aiosqlite_worker:
 
     async def add_new_checkboxer(self, chboxer_title, tg_id, chboxer_status='private'):
         async with aiosqlite.connect(self.db_name) as db:
-            await db.execute('INSERT INTO checkboxer(chboxer_title, chboxer_status, tg_id) VALUES (?,?,?)',(
+            await db.execute('INSERT INTO checkboxers(chboxer_title, chboxer_status, tg_id) VALUES (?,?,?)',(
                 chboxer_title, chboxer_status, tg_id))
             await db.commit()
             logging.info('Добавили новый чек боксер!')
 
 
-    async def add_new_checkbox(self, chbox_title, checkboxer_id, chb_status=1):
+    async def add_new_checkbox(self, chbox_title, checkboxer_id, chb_status=0):
         async with aiosqlite.connect(self.db_name) as db:
-            await db.execute('INSERT INTO checkbox(chbox_title, chb_status,checkboxer_id) VALUES (?,?,?)',(
+            await db.execute('INSERT INTO checkbox(chbox_title, chb_status, checkboxer_id) VALUES (?,?,?)',(
                 chbox_title, chb_status, checkboxer_id))
             await db.commit()
             logging.info('Добавили новый чек бокс!')
@@ -72,7 +72,7 @@ class Aiosqlite_worker:
 
     async def get_checkboxers(self, tg_id):
         async with aiosqlite.connect(self.db_name) as db:
-            cursor = await db.execute('SELECT id, chboxer_title FROM checkboxer WHERE tg_id=?', (tg_id,))
+            cursor = await db.execute('SELECT id, chboxer_title FROM checkboxers WHERE tg_id=?', (tg_id,))
             rows = await cursor.fetchall()
         logging.info('Достаем чекбоксеры юзера')
         return rows
@@ -88,3 +88,10 @@ class Aiosqlite_worker:
             return rows
         else:
             return False
+
+
+    async def update_checkbox(self, id, status):
+        async with aiosqlite.connect(self.db_name) as db:
+            await db.execute('UPDATE checkbox SET chb_status=? WHERE id=?', (status, id))
+            await db.commit()
+        logging.info(f'Обновили статус у чекбокса {id}')
