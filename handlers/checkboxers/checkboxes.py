@@ -3,12 +3,11 @@ import logging
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.webhook import DeleteMessage
 from aiogram.types import CallbackQuery, Message
-from aiogram.bot.bot import Bot
-
+from aiogram.utils.exceptions import MessageToDeleteNotFound
 
 from keyboards.inline.checkbox_kb import checkbox_kb, show_checkboxes_kb, create_checkbox_kb
 from keyboards.inline.start import startup_kb
-from loader import dp, db_worker
+from loader import dp, db_worker, bot
 from aiogram.dispatcher.filters import Text
 
 from states.checboxer_state import CreateState
@@ -32,10 +31,14 @@ async def get_checkboxes(call: CallbackQuery, state: FSMContext):
 
 @dp.message_handler(state=CreateState.create_checkbox)
 async def  add_chechbox_message_handl(message: Message, state: FSMContext):
+    await message.delete()
     data = await state.get_data()
     if not message.text == []:
         await db_worker.add_new_checkbox(message.text, data['checkboxer_id'])
-    await message.delete()
+    if 'message_id' in data:
+        await bot.delete_message(data['chat_id'], data['message_id'])
+        logging.info(f'Удалили сообщение {data["message_id"]}')
+    await state.update_data(message_id=message.message_id, chat_id=message.chat.id)
     await message.answer(f'Наберите название нового чекбоксера или нажмите,\n '
                               f'чтоб получить список чебоксов!',
                               reply_markup=show_checkboxes_kb(data['checkboxer_id']))
@@ -43,11 +46,16 @@ async def  add_chechbox_message_handl(message: Message, state: FSMContext):
 
 @dp.callback_query_handler(text='create_checkbox', state=CreateState.create_checkbox)
 async def add_checkbox(call: CallbackQuery, state: FSMContext):
-    await call.message.delete()
     data = await state.get_data()
+    if 'message_id' in data:
+        try:
+            await bot.delete_message(data['chat_id'], data['message_id'])
+            logging.info(f'Удалили сообщение {data["message_id"]}')
+        except MessageToDeleteNotFound:
+            pass
+    await state.update_data(message_id=call.message.message_id, chat_id=call.message.chat.id)
     if not call.message.text == []:
         await db_worker.add_new_checkbox(call.message.text, data['checkboxer_id'])
-    await call.message.delete()
     await call.message.answer(f'Наберите название нового чекбоксера или нажмите,\n '
                               f'чтоб получить список чебоксов!',
                       reply_markup=show_checkboxes_kb(data['checkboxer_id']))
@@ -67,7 +75,6 @@ async def get_checkboxes_in_state(call: CallbackQuery, state: FSMContext):
 async def update_checkbox(call: CallbackQuery, state: FSMContext):
     data_id = call.data.split('_')[-1]
     data_status = call.data.split('_')[-2]
-
     if data_status == '0':
         await db_worker.update_checkbox(data_id, 1)
     else:
