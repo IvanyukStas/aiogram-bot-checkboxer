@@ -16,7 +16,7 @@ from states.checboxer_state import CreateState
 @dp.callback_query_handler(Text(startswith='checkboxer_id'))
 async def get_checkboxes(call: CallbackQuery, state: FSMContext):
     data = call.data.split('_')
-    checkboxes = await db_worker.get_checkboxes(data[-1])
+    checkboxes = await db_worker.get_checkboxes_sqlite(data[-1])
     await state.update_data(checkboxer_id=data[-1])
     logging.info('Добавили стетйт криате')
     if checkboxes == False:
@@ -34,7 +34,7 @@ async def  add_chechbox_message_handl(message: Message, state: FSMContext):
     await message.delete()
     data = await state.get_data()
     if not message.text == []:
-        await db_worker.add_new_checkbox(message.text, data['checkboxer_id'])
+        await db_worker.add_new_checkbox_sqlite(message.text, data['checkboxer_id'])
     if 'message_id' in data:
         await bot.delete_message(data['chat_id'], data['message_id'])
         logging.info(f'Удалили сообщение {data["message_id"]}')
@@ -55,7 +55,7 @@ async def add_checkbox(call: CallbackQuery, state: FSMContext):
             pass
     await state.update_data(message_id=call.message.message_id, chat_id=call.message.chat.id)
     if not call.message.text == []:
-        await db_worker.add_new_checkbox(call.message.text, data['checkboxer_id'])
+        await db_worker.add_new_checkbox_sqlite(call.message.text, data['checkboxer_id'])
     await call.message.answer(f'Наберите название нового чекбоксера или нажмите,\n '
                               f'чтоб получить список чебоксов!',
                       reply_markup=show_checkboxes_kb(data['checkboxer_id']))
@@ -65,7 +65,7 @@ async def add_checkbox(call: CallbackQuery, state: FSMContext):
 @dp.callback_query_handler(Text(startswith='checkboxer_id'), state=CreateState.create_checkbox)
 async def get_checkboxes_in_state(call: CallbackQuery, state: FSMContext):
     data = await state.get_data()
-    checkboxes = await db_worker.get_checkboxes(data['checkboxer_id'])
+    checkboxes = await db_worker.get_checkboxes_sqlite(data['checkboxer_id'])
     await call.message.delete()
     await call.message.answer(f'Ваши чекбоксы!', reply_markup=checkbox_kb(checkboxes, data['checkboxer_id']))
     logging.info(' используем get_checkboxes_in_state')
@@ -76,11 +76,11 @@ async def update_checkbox(call: CallbackQuery, state: FSMContext):
     data_id = call.data.split('_')[-1]
     data_status = call.data.split('_')[-2]
     if data_status == '0':
-        await db_worker.update_checkbox(data_id, 1)
+        await db_worker.update_checkbox_sqlite(data_id, 1)
     else:
-        await db_worker.update_checkbox(data_id, 0)
+        await db_worker.update_checkbox_sqlite(data_id, 0)
     data = await state.get_data()
-    checkboxes = await db_worker.get_checkboxes(data['checkboxer_id'])
+    checkboxes = await db_worker.get_checkboxes_sqlite(data['checkboxer_id'])
     await call.message.delete()
     await call.message.answer(f'Ваши чекбоксы!', reply_markup=checkbox_kb(checkboxes, data['checkboxer_id']))
 
@@ -90,3 +90,15 @@ async def cancel(call: CallbackQuery, state: FSMContext):
     await state.finish()
     await call.message.delete()
     await call.message.answer('Выберите раздел', reply_markup=startup_kb)
+
+
+@dp.callback_query_handler(text='set_checkbox_uncheck', state=CreateState.create_checkbox)
+async def set_checkbox_uncheck(call: CallbackQuery, state: FSMContext):
+    data= await state.get_data()
+    await db_worker.set_all_checkboxes_to_uncheck_sqlite(data['checkboxer_id'])
+    logging.info(f'Обновляем чекбоксы в ствтус анчек! для {data["checkboxer_id"]}')
+    checkboxes = await db_worker.get_checkboxes_sqlite(data['checkboxer_id'])
+    await call.message.delete()
+    await call.message.answer(f'Ваши чекбоксы!', reply_markup=checkbox_kb(checkboxes, data['checkboxer_id']))
+
+

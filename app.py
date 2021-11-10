@@ -16,7 +16,7 @@ async def on_startup(dispatcher):
     # Уведомляет про запуск
     await on_startup_notify(dispatcher)
     if not os.path.exists(db_worker.db_name):
-        await db_worker.create_database()
+        await db_worker.create_database_sqlite()
 
 
 

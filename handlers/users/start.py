@@ -12,5 +12,5 @@ async def bot_start(message: types.Message):
                          f"Регестрируем вас в системе!",
                          reply_markup=startup_kb)
     db_worker = Aiosqlite_worker()
-    await db_worker.add_new_user(message.from_user.full_name, message.from_user.id)
+    await db_worker.add_new_user_sqlite(message.from_user.full_name, message.from_user.id)
 

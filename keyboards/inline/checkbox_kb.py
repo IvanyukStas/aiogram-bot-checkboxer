@@ -13,11 +13,12 @@ def checkbox_kb(checkbox, id):
             check_status = '✅'
         checkbox_button.append(types.InlineKeyboardButton(check_status+chbox_name, callback_data='update_' + str(i[2])
                                                                                                  + '_' + str(i[0])))
-    a = types.InlineKeyboardButton('Добавить чекбокс', callback_data='create_checkbox')
-    b = types.InlineKeyboardButton('Начало', callback_data='begin_of_game')
+    add_chebox_button = types.InlineKeyboardButton('Добавить чекбокс', callback_data='create_checkbox')
+    begin_button = types.InlineKeyboardButton('Начало', callback_data='begin_of_game')
     chboxer_kb = types.InlineKeyboardMarkup(row_width=1)
+    set_checkbox_uncheck_button = types.InlineKeyboardButton('Сбросить чекбокс', callback_data='set_checkbox_uncheck')
     chboxer_kb.add(*checkbox_button)
-    chboxer_kb.row(a, b)
+    chboxer_kb.row(add_chebox_button, begin_button, set_checkbox_uncheck_button)
     return chboxer_kb
 
 
