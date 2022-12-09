@@ -1,3 +1,4 @@
+import logging
 from aiogram.dispatcher import FSMContext
 from aiogram.types import CallbackQuery, Message
 from aiogram.dispatcher.filters import Text
@@ -17,7 +18,12 @@ async def start_create_checkboxer(call: CallbackQuery):
 @dp.callback_query_handler(Text(startswith='my_checkboxers'))
 async def get_checkboxers(call: CallbackQuery):
     checkboxers = await db_worker.get_checkboxers_sqlite(call.from_user.id)
-    await call.message.answer(f'Ваши чекбоксеры!', reply_markup=checkboxer_kb(checkboxers))
+    if not checkboxers == []:
+        await call.message.answer(f'Ваши чекбоксеры!', reply_markup=checkboxer_kb(checkboxers))
+    else:
+        await call.message.answer(f'У вас пока нет чекбоксеров, '
+                                f'нажмите создать чекбоксер, '
+                                f'чтобы создать первый чекбоксер',)
 
 
 @dp.message_handler(state=CreateState.create_checkboxer)
