@@ -107,11 +107,7 @@ class Aiosqlite_worker:
 
     async def delete_checkboxer_sqlite(self, id):
         async with aiosqlite.connect(self.db_name) as db:
-            await db.execute("PRAGMA FOREIGN_KEYS = ON")     
-            c = await db.execute("SHOW tables")
-            rows = await c.fetchall()   
-            print(rows)   
-
+            await db.execute("PRAGMA FOREIGN_KEYS = ON")
             await db.execute(f'DELETE FROM "checkboxers" WHERE id={id}')
             await db.commit()
         logging.info('Удалили чекбоксер!')
