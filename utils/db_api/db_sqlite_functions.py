@@ -9,6 +9,7 @@ class Aiosqlite_worker:
 
     async def create_database_sqlite(self):
         async with aiosqlite.connect(self.db_name) as db:
+            await db.execute("PRAGMA FOREIGN_KEYS = ON")
             await db.execute("""CREATE TABLE IF NOT EXISTS users(
                            id INTEGER PRIMARY KEY AUTOINCREMENT,
                            uname TEXT,
@@ -20,8 +21,8 @@ class Aiosqlite_worker:
                                        chboxer_title TEXT,
                                        chboxer_status TEXT,
                                        tg_id TEXT ,
-                                       FOREIGN KEY (tg_id) REFERENCES user(tg_id) 
-                                       ON DELETE CASCADE)   ;                                       
+                                       FOREIGN KEY (tg_id) REFERENCES users(tg_id) 
+                                       )   ;                                       
                                     """)
             await db.execute("""CREATE TABLE IF NOT EXISTS checkbox(
                                                    id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -103,3 +104,14 @@ class Aiosqlite_worker:
             await db.execute(f'UPDATE checkbox SET chb_status=0 WHERE checkboxer_id={checkboxer_id}')
             await db.commit()
         logging.info('Используем set_all_checkboxes_to_uncheck')
+
+    async def delete_checkboxer_sqlite(self, id):
+        async with aiosqlite.connect(self.db_name) as db:
+            await db.execute("PRAGMA FOREIGN_KEYS = ON")     
+            c = await db.execute("SHOW tables")
+            rows = await c.fetchall()   
+            print(rows)   
+
+            await db.execute(f'DELETE FROM "checkboxers" WHERE id={id}')
+            await db.commit()
+        logging.info('Удалили чекбоксер!')

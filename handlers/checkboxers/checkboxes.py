@@ -6,6 +6,7 @@ from aiogram.types import CallbackQuery, Message
 from aiogram.utils.exceptions import MessageToDeleteNotFound
 
 from keyboards.inline.checkbox_kb import checkbox_kb, show_checkboxes_kb, create_checkbox_kb
+from keyboards.inline.checkboxers_kb import checkboxer_kb
 from keyboards.inline.start import startup_kb
 from loader import dp, db_worker, bot
 from aiogram.dispatcher.filters import Text
@@ -33,6 +34,7 @@ async def get_checkboxes(call: CallbackQuery, state: FSMContext):
 async def  add_chechbox_message_handl(message: Message, state: FSMContext):
     await message.delete()
     data = await state.get_data()
+    print(message.text, '==============================')
     if not message.text == []:
         await db_worker.add_new_checkbox_sqlite(message.text, data['checkboxer_id'])
     if 'message_id' in data:
@@ -54,8 +56,9 @@ async def add_checkbox(call: CallbackQuery, state: FSMContext):
         except MessageToDeleteNotFound:
             pass
     await state.update_data(message_id=call.message.message_id, chat_id=call.message.chat.id)
-    if not call.message.text == []:
-        await db_worker.add_new_checkbox_sqlite(call.message.text, data['checkboxer_id'])
+    # print(call.message.text, 'ccccccccccccccccccccccccccccaaaaaall')
+    # if not call.message.text == []:
+    #     await db_worker.add_new_checkbox_sqlite(call.message.text, data['checkboxer_id'])
     await call.message.answer(f'Наберите название нового чекбоксера или нажмите,\n '
                               f'чтоб получить список чебоксов!',
                       reply_markup=show_checkboxes_kb(data['checkboxer_id']))
@@ -101,4 +104,15 @@ async def set_checkbox_uncheck(call: CallbackQuery, state: FSMContext):
     await call.message.delete()
     await call.message.answer(f'Ваши чекбоксы!', reply_markup=checkbox_kb(checkboxes, data['checkboxer_id']))
 
-
+@dp.callback_query_handler(text='delete_checkboxer', state='*')
+async def delete_checkboxer_handler(call: CallbackQuery, state: FSMContext):
+    checkboxer_id = await state.get_data('checkboxer_id')
+    await db_worker.delete_checkboxer_sqlite(checkboxer_id['checkboxer_id'])
+    await call.message.delete()
+    checkboxers = await db_worker.get_checkboxers_sqlite(call.from_user.id)
+    if not checkboxers == []:
+        await call.message.answer(f'Ваши чекбоксеры!', reply_markup=checkboxer_kb(checkboxers))
+    else:
+        await call.message.answer(f'У вас пока нет чекбоксеров, '
+                                f'нажмите создать чекбоксер, '
+                                f'чтобы создать первый чекбоксер',)
